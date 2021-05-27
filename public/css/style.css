@@ -1,0 +1,7 @@
+/* TODO: style each page */
+table{
+    overflow-y:scroll;
+    height: 500px;
+    width: 500px;
+    display:block;
+}

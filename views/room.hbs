@@ -1,0 +1,135 @@
+<h1> Chat Room: {{roomName}}</h1>
+<p>
+    The room you are visiting is {{ roomName }}
+</p>
+<p>To generate a new room, here is the room id: {{ newRoomId }}</p>
+
+<!-- Trigger the modal on Page Load-->
+<script type="text/javascript">
+    $(window).on('load', function() {
+        $('#myModal').modal({backdrop:'static', keyboard: false});
+        $('#myModal').modal('show');
+    });  
+
+    //global variables
+    var msgContainer;
+
+    function closeModal(){
+        var user = document.getElementById("userPrompt").value;
+        if(user === "")
+            alert("Please enter a valid username!")
+        else{
+            $('#myModal').modal('hide');
+            document.getElementById("chatname").value = user;
+        }
+    } 
+
+    function clearChat(){
+        document.getElementById("chatbox").value = "";
+    }
+
+    setInterval(() => fetch("http://localhost:8080/{{roomName}}/messages").then(res => res.json()).then(data => {//change html
+    
+      msgContainer = document.getElementById("Messages")
+      
+      while (msgContainer.firstChild) {
+        msgContainer.removeChild(msgContainer.firstChild);
+      }
+
+      createMessage(data);
+
+    
+    }), 1000)
+
+
+    function createMessage(data) {
+      
+      //sort data based on date
+      const sortedResult = data.sort(function(a,b) {
+
+        var date1 = new Date(a.created_at);
+        var date2 = new Date(b.created_at);
+
+        if (date1 > date2) return -1;
+        if (date1 < date2) return 1;
+
+        return 0;
+
+	    }); 
+
+      data.forEach(dataObject => {
+
+        //var newDate = new Date(
+          //2021-05-26T08:20:50.554Z
+         // dataObject.date.replace(/([\d]+-[\d]+-[\d]+)/,
+				 // "$1")
+          
+       // );
+
+        var tempDate = dataObject.date.replace(/(^[\d|-]+).*/,
+				  "$1");
+        
+        var tempTimestamp = dataObject.date.replace(/^[\d|-]+\w([\d|:]+).*/,
+				  "$1");
+
+        //create temp div to append username, date, body too
+        const content = document.createElement('div')
+        content.className = "content-div"
+
+        const name = document.createElement('span');
+        name.className = "name";
+        name.innerText = dataObject.Username + " @";
+
+        const date = document.createElement('span');
+        date.className = "date";
+        date.innerText = tempDate + " (" + tempTimestamp + ")";
+
+        const msg = document.createElement('p');
+        msg.className = "msg";
+        msg.innerText = dataObject.body;
+
+        content.append(name);
+        content.append(date);
+        content.append(msg);
+        content.append(document.createElement('hr'));
+
+        //append to the container to display on browser
+        msgContainer.appendChild(content);
+
+      });
+    }
+    
+</script>
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" role="dialog">
+  <div class="modal-dialog">
+    
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-body">
+        <p>Enter a username:</p>
+        <form action="/{{roomName}}/users" method = "POST">
+          <input type="text" id="userPrompt" name="username" placeholder="Enter a username">
+          <input type="submit" value="Start Chatting!" onclick="closeModal()">
+        </form>
+      </div>
+    </div>
+      
+  </div>
+</div>
+  
+
+<center>
+  <table id= "Messages">
+    <tr>Messages:</tr>   
+  </table>  
+
+  <form id = "chatForm" action="/{{roomName}}/postMessage" method = "POST">
+    <p>Your username: <input id="chatname" name = "chatname" type="text" readonly></p>
+    <p>Type your message here:</p>
+    <textarea id="chatbox" name = "chatbox" rows = "5" cols = "60" name = "description" form = "chatForm"></textarea><br>
+    <input type="submit" value="Send Message" onclick="setTimeout(() => { clearChat() } ,100)"/>
+  </form>
+
+</center>
